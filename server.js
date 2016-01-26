@@ -1,30 +1,20 @@
 var express = require('express');
 var app = express();
+var bodyParser = require('body-parser');
 var PORT = process.env.PORT || 3000;
-
-var todos =[{
-  id: 1,
-  description: 'Learn to code cool stuff',
-  compelted: false
-},{
-  id: 2,
-  description: 'go to market',
-  compelted: false
-},{
-  id:3,
-  description: 'go to shleep',
-  compelted: true
-}];
-
-console.log(todos[0].id);
-
 //https://suri-todo-api.herokuapp.com/
+
+var todos =[];
+//not secure until we start using a database
+var todoNextId = 1;
+
+app.use(bodyParser.json());
 
  app.get('/', function(req, res){
    res.send('Todo API Root')
  });
 
-// GET /todos
+// GET /todos    ... returns all todos
 app.get('/todos', function(req, res){
   res.json(todos);
 });
@@ -42,7 +32,6 @@ app.get('/todos/:id', function(req, res){
     } 
   });
 
-
 //for loop instead of forEach
 //for(i = 0; i < todos.length; i++){
 //  if (todos[i].id === todoId){
@@ -55,6 +44,20 @@ app.get('/todos/:id', function(req, res){
   } else {
       res.status(404).send();
     };
+});
+
+//POST /todos .. add a new todo
+app.post('/todos', function (req, res){
+  var body = req.body;
+
+  body.id = todoNextId++;
+  bodyParser(body);
+  todos.push(body);
+  
+  console.log('description ' + body.description);
+  console.log(todos);
+  
+  res.json(body);
 });
 
 
