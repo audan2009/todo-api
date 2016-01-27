@@ -15,14 +15,13 @@ app.use(bodyParser.json());
    res.send('Todo API Root')
  });
 
-// GET /todos    ... returns all todos
+// GET all /todos
 app.get('/todos', function(req, res){
   res.json(todos);
 });
 
-
 // GET  /todos/:id before underscore
-//
+
 //app.get('/todos/:id', function(req, res){
 //  var todoId = parseInt(req.params.id, 10);
 //  var matchedTodo;
@@ -47,17 +46,18 @@ app.get('/todos', function(req, res){
 //    };
 //});
 
-app.get('todos/id', function(req, res){
+//GET by ID
+app.get('/todos/:id', function(req, res){
   var todoId = parseInt(req.params.id, 10);
   //underscore findwhere takes array and returns 1 match
-  var matchedTodo = _.findWhere(todos, todoId);
+  var matchedTodo = _.findWhere(todos, {id:todoId});
+
    if(matchedTodo){
       res.json(matchedTodo);
   } else {
       res.status(404).send();
     };
-})
-
+});
 
 //POST /todos .. add a new todo
 app.post('/todos', function (req, res){
@@ -78,6 +78,55 @@ app.post('/todos', function (req, res){
 
   res.json(body);
   }
+});
+
+//DELETE /todos/:id
+
+app.delete('/todos/:id', function(req, res){
+  var todoId = parseInt(req.params.id, 10);
+  var matchedTodo = _.findWhere(todos, {id:todoId});
+  
+  if(!matchedTodo){
+    res.status(404).send({"error":"no todo found"});
+  } else{  
+    //without takes an array, then the full object to delete from matchedTodo
+   todos = _.without(todos, matchedTodo);
+    //closes request and sends 200 status
+    res.json(matchedTodo);
+  }
+  
+})
+
+//PUT /todos/:id
+
+app.put('/todos/:id', function(req, res){
+  var body = _.pick(req.body, 'description','completed');
+  var todoId = parseInt(req.params.id, 10);
+  var matchedTodo = _.findWhere(todos, {id:todoId});
+  var validAttributes = {};
+  
+  if(!matchedTodo){
+    return res.status(404).send({"error":"no todo found"});
+  } 
+  
+  if(body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
+     validAttributes.completed = body.completed;
+     } else if(body.hasOwnProperty('completed')){
+        return res.status(400).send({"error":"issue with completed"});
+      } 
+  
+   if(body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0){
+     validAttributes.description = body.description;
+     } else if(body.hasOwnProperty('description')){
+        return res.status(400).send({"error":"issue with description"});
+      } 
+  
+  //if all IF statements pass then there's something to update
+  // you dont have to set matchedTodo = ._extend since objects are passed by reference
+  
+   _.extend(matchedTodo, validAttributes);
+  res.send(matchedTodo);
+  
 });
 
 
