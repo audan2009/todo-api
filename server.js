@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var _ = require('underscore');
+var db = require('./db.js');
 var PORT = process.env.PORT || 3000;
 //https://suri-todo-api.herokuapp.com/
 
@@ -15,19 +16,42 @@ app.use(bodyParser.json());
    res.send('Todo API Root')
  });
 
-// GET all /todos  ... /todos?completed=true
-app.get('/todos', function(req, res){
+app.get('/todos',function(req,res){
+  res.json(todos);
+})
+
+// GET all /todos  ... /todos?c=true&q=work
+app.get('/todos/api', function(req, res){
   //queryParams returns {completed: 'true'}
-  var queryParams = req.query;
+  var queryParams = _.pick(req.query, 'c','q');
   var filteredTodos = todos;
+  console.log(_.size(queryParams));
 
-  if(queryParams.hasOwnProperty('completed') && queryParams.completed === 'true' ) {
-    filteredTodos = _.where(filteredTodos, {completed: true});
-  } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-    filteredTodos = _.where(filteredTodos, {completed: false});
-  }
+    //c = completed, q = description
+      if(queryParams.hasOwnProperty('c') && queryParams.c === 'true' ) {
+        filteredTodos = _.where(filteredTodos, {completed: true});
+      } else if (queryParams.hasOwnProperty('c') && queryParams.c === 'false') {
+        filteredTodos = _.where(filteredTodos, {completed: false});
+      }
 
-res.json(filteredTodos);
+    if(queryParams.hasOwnProperty('q') && queryParams.q.length > 0){
+      filteredTodos = _.filter(filteredTodos, function(todo){
+      //._filter takes an array, then a call back function that returns true or false, filter returns an rray of all values that pass
+      // `~` with `indexOf` means "contains"
+      // `toLowerCase` to discard case of question string
+      //indexOf returns position where text is found, if its not found then returns -1
+      //STACKOVER FLOW SOLUTIONS
+      // return ~todo.q.toLowerCase().indexOf(queryParams.q);
+      //Tutorial SOLUTIONS
+      //indexOf, toLowerCase is only available on strings, not objects
+        return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1
+      });
+    }
+      if(_.size(queryParams)  === 0 ){
+         return res.status(404).send({"error":"cant find what you're looking for"});
+      }
+
+    res.json(filteredTodos);
 });
 
 // GET  /todos/:id before underscore
@@ -59,39 +83,57 @@ res.json(filteredTodos);
 //GET by ID
 app.get('/todos/:id', function(req, res){
   var todoId = parseInt(req.params.id, 10);
-  //underscore findwhere takes array and returns 1 match
-  var matchedTodo = _.findWhere(todos, {id:todoId});
 
-   if(matchedTodo){
-      res.json(matchedTodo);
-  } else {
-      res.status(404).send();
-    };
+  db.todo.findById(todoId).then(function(todo){
+    console.log(todo + 'this is the to do');
+    //!! coerces the object to boolean
+    // http://stackoverflow.com/questions/784929/what-is-the-not-not-operator-in-javascript
+    if(!!todo){
+      res.json(todo);
+    } else {
+      return res.status(404).send({"error": "cant find what you're looking for"});
+    }
+  }).catch(function(e){
+    //500 something went wrong on server side
+    return res.status(500).json(e);
+  })
+
+  // //underscore findwhere takes array and returns 1 match
+  // var matchedTodo = _.findWhere(todos, {id:todoId});
+  //
+  //  if(matchedTodo){
+  //     res.json(matchedTodo);
+  // } else {
+  //     res.status(404).send();
+  //   };
 });
 
 //POST /todos .. add a new todo
 app.post('/todos', function (req, res){
   var body = _.pick(req.body, 'description','completed');
 
-  // isBool checking true/false, isString checks if string was provided, trim removes spaces and makes sure no one types a bunch of spaces
-  if(!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0){
-    //400 bad data being passed
-    return res.status(400).send();
-  } else {
-
-    //set body.description to the trimmed value
-
-  body.description = body.description.trim();
-  body.id = todoNextId++;
-
-  todos.push(body);
-
-  res.json(body);
-  }
+    db.todo.create(body).then(function(todo){
+      //todo object in sequelize isn't just an object, so have to use toJSON
+      return res.json(todo.toJSON());
+    }).catch(function(e){
+      return res.status(400).json(e);
+    });
+      //BEFORE DB
+          // isBool checking true/false, isString checks if string was provided, trim removes spaces and makes sure no one types a bunch of spaces
+        //   if(!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0){
+        //     //400 bad data being passed
+        //     return res.status(400).send();
+        //   } else {
+        //     //set body.description to the trimmed value
+        //   body.description = body.description.trim();
+        //   body.id = todoNextId++;
+        //
+        //   todos.push(body);
+        //   res.json(body);
+        //   }
 });
 
 //DELETE /todos/:id
-
 app.delete('/todos/:id', function(req, res) {
   var todoId = parseInt(req.params.id, 10);
   var matchedTodo = _.findWhere(todos, {id:todoId})
@@ -106,7 +148,6 @@ app.delete('/todos/:id', function(req, res) {
 });
 
 //PUT /todos/:id ...update
-
 app.put('/todos/:id', function(req, res){
   //this is the body sent in the request, we only want to "pick" these 2 keys
   var body = _.pick(req.body, 'description','completed');
@@ -144,7 +185,9 @@ app.put('/todos/:id', function(req, res){
 
 });
 
-
-app.listen(PORT, function(){
-  console.log('Cap, Im listning on ' + PORT + '!');
+//coming from imports object, this is the lowercase version
+db.sequelize.sync(/*{force: true}*/).then(function(){
+  app.listen(PORT, function(){
+    console.log('Cap, Im listning on ' + PORT + '!');
+  });
 });
