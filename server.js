@@ -16,42 +16,33 @@ app.use(bodyParser.json());
    res.send('Todo API Root')
  });
 
-app.get('/todos',function(req,res){
-  res.json(todos);
-})
+// app.get('/todos',function(req,res){
+//   res.json(todos);
+// })
 
 // GET all /todos  ... /todos?c=true&q=work
-app.get('/todos/api', function(req, res){
+app.get('/todos', function(req, res){
   //queryParams returns {completed: 'true'}
-  var queryParams = _.pick(req.query, 'c','q');
-  var filteredTodos = todos;
-  console.log(_.size(queryParams));
+  var query = _.pick(req.query, 'c','q');
+  var where = {};
 
-    //c = completed, q = description
-      if(queryParams.hasOwnProperty('c') && queryParams.c === 'true' ) {
-        filteredTodos = _.where(filteredTodos, {completed: true});
-      } else if (queryParams.hasOwnProperty('c') && queryParams.c === 'false') {
-        filteredTodos = _.where(filteredTodos, {completed: false});
-      }
+  if(query.hasOwnProperty('c') && query.c === 'true' ) {
+    where.completed = true;
+  } else if (query.hasOwnProperty('c') && query.c === 'false') {
+    where.completed = false;
+  }
 
-    if(queryParams.hasOwnProperty('q') && queryParams.q.length > 0){
-      filteredTodos = _.filter(filteredTodos, function(todo){
-      //._filter takes an array, then a call back function that returns true or false, filter returns an rray of all values that pass
-      // `~` with `indexOf` means "contains"
-      // `toLowerCase` to discard case of question string
-      //indexOf returns position where text is found, if its not found then returns -1
-      //STACKOVER FLOW SOLUTIONS
-      // return ~todo.q.toLowerCase().indexOf(queryParams.q);
-      //Tutorial SOLUTIONS
-      //indexOf, toLowerCase is only available on strings, not objects
-        return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1
-      });
+  if(query.hasOwnProperty('q') && query.q.length > 0){
+    where.description = {
+      $like: '%'+ query.q +'%'
     }
-      if(_.size(queryParams)  === 0 ){
-         return res.status(404).send({"error":"cant find what you're looking for"});
-      }
+  }
 
-    res.json(filteredTodos);
+    db.todo.findAll({where: where}).then(function(todos){
+      res.json(todos);
+    }).catch(function(e){
+      res.status(500).send(e);
+    });
 });
 
 // GET  /todos/:id before underscore

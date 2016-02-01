@@ -42,8 +42,8 @@ sequelize.sync().then(function(){
   //     description:'clean office'
   //   });
   // }).then(function(){
-  //   // return Todo.findById(1);
-  //   return Todo.findAll({
+    // return Todo.findById(1);
+    // return Todo.findAll({
   //     where: {
   //       description: {
   //         //% is like *
