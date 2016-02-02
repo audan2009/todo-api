@@ -139,17 +139,17 @@ app.delete('/todos/:id', function(req, res) {
       id: todoId
     }
   }).then(function(rowsDeleted){
-    if(rowsDeleted === 0){
-      res.status(404).json({
-        error: 'No todo with id'
-      });
-    } else {
-      //204 everyting went well and nothing to send back
-      res.status(204).send();
-    }
-  }, function(){
-    res.status(500).send();
-  });
+      if(rowsDeleted === 0){
+        res.status(404).json({
+          error: 'No todo with id'
+        });
+      } else {
+        //204 everyting went well and nothing to send back
+        res.status(204).send();
+      }
+    }, function(){
+      res.status(500).send();
+    });
 
   // if(!matchedTodo){
   //   res.status(404).send({"error":"no todo found"});
@@ -165,37 +165,31 @@ app.delete('/todos/:id', function(req, res) {
 app.put('/todos/:id', function(req, res){
   //this is the body sent in the request, we only want to "pick" these 2 keys
   var body = _.pick(req.body, 'description','completed');
-  //get the id we are looking for from route
   var todoId = parseInt(req.params.id, 10);
-  //find where that id matches in the todo array
-  var matchedTodo = _.findWhere(todos, {id:todoId});
-  var validAttributes = {};
+  var attributes = {};
 
-  //following validation to ensure that whats being updated is valid
+  if(body.hasOwnProperty('completed')){
+     attributes.completed = body.completed;
+     }
 
-  if(!matchedTodo){
-    return res.status(404).send({"error":"no todo found"});
-  }
+   if(body.hasOwnProperty('description')){
+     attributes.description = body.description;
+     }
 
-  //hasOwnProperty checks if the body which is an array has the 'completed' prorperty and is a boolean
-  if(body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
-     validAttributes.completed = body.completed;
-     } else if(body.hasOwnProperty('completed')){
-        return res.status(400).send({"error":"issue with completed"});
-      }
-
-   if(body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0){
-     validAttributes.description = body.description;
-     } else if(body.hasOwnProperty('description')){
-        return res.status(400).send({"error":"issue with description"});
-      }
-
-  //if all IF statements pass then there's something to update
-  // you dont have to set matchedTodo = ._extend since objects are passed by reference
-  //_.extend takes an array then updates it with the new validAttributes
-
-   _.extend(matchedTodo, validAttributes);
-  res.send(matchedTodo);
+    db.todo.findById(todoId).then(function(todo){
+      if(todo){
+         todo.update(attributes).then(function(todo) {
+             res.json(todo.toJSON());
+         }, function(e){
+           res.status(400).JSON(e);
+         });
+      } else {
+        res.status(404).send();
+      }  //up to here, everything by findById went well, next is id was not found
+    }, function(){
+        res.status(500).send();
+        //end follow up code to findById, the use todo.update
+    })
 
 });
 
