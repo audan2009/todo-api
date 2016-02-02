@@ -1,6 +1,6 @@
 //creates new SQLite database
 
-var Sequelize = require('Sequelize');
+var Sequelize = require('sequelize');
 //helps load database
 var env = process.env.NODE_ENV || 'development';
 var sequelize;
