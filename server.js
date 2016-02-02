@@ -134,10 +134,21 @@ app.post('/todos', function (req, res){
 app.delete('/todos/:id', function(req, res) {
   var todoId = parseInt(req.params.id, 10);
 
-  db.todo.findById(todoId).then(function(deleteId){
-    return deleteId.destroy();
-  }).catch(function(e){
-    res.status(500).send(e);
+  db.todo.destroy({
+    where: {
+      id: todoId
+    }
+  }).then(function(rowsDeleted){
+    if(rowsDeleted === 0){
+      res.status(404).json({
+        error: 'No todo with id'
+      });
+    } else {
+      //204 everyting went well and nothing to send back
+      res.status(204).send();
+    }
+  }, function(){
+    res.status(500).send();
   });
 
   // if(!matchedTodo){
