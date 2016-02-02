@@ -40,15 +40,15 @@ app.get('/todos', function(req, res){
     };
   }
 
-  if(_.size(where)  === 0 ){
-       return res.status(404).send({"error":"cant find what you're looking for"});
-    } else{
+  // if(_.size(where)  === 0 ){
+  //      return res.status(404).send({"error":"cant find what you're looking for"});
+  //   } else{
     db.todo.findAll({where: where}).then(function(todos){
       res.json(todos);
     }).catch(function(e){
       res.status(500).send(e);
     });
-  }
+  //}
 });
 
 // GET  /todos/:id before underscore
