@@ -20,11 +20,13 @@ app.use(bodyParser.json());
 //   res.json(todos);
 // })
 
-// GET all /todos  ... /todos?c=true&q=work
+// GET /todos?c=true&q=work
 app.get('/todos', function(req, res){
   //queryParams returns {completed: 'true'}
   var query = _.pick(req.query, 'c','q');
   var where = {};
+
+  console.log(where);
 
   if(query.hasOwnProperty('c') && query.c === 'true' ) {
     where.completed = true;
@@ -35,14 +37,18 @@ app.get('/todos', function(req, res){
   if(query.hasOwnProperty('q') && query.q.length > 0){
     where.description = {
       $like: '%'+ query.q +'%'
-    }
+    };
   }
 
+  if(_.size(where)  === 0 ){
+       return res.status(404).send({"error":"cant find what you're looking for"});
+    } else{
     db.todo.findAll({where: where}).then(function(todos){
       res.json(todos);
     }).catch(function(e){
       res.status(500).send(e);
     });
+  }
 });
 
 // GET  /todos/:id before underscore

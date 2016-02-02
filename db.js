@@ -1,10 +1,24 @@
 //creates new SQLite database
 
 var Sequelize = require('Sequelize');
-var sequelize = new Sequelize(undefined, undefined, undefined, {
-  'dialect': 'sqlite',
-  'storage': __dirname + '/data/dev-todo-api.sqlite'
-});
+//helps load database
+var env = process.env.NODE_ENV || 'development';
+var sequelize;
+
+if(env === 'production') {
+  //how to connect to postgresql on heroku
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres'
+  })
+} else
+  //not connected to heroku
+   sequelize = new Sequelize(undefined, undefined, undefined, {
+    'dialect': 'sqlite',
+    'storage': __dirname + '/data/dev-todo-api.sqlite'
+  });
+}
+
+
 
 var db = {};
 
