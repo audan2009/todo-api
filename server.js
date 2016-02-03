@@ -193,6 +193,19 @@ app.put('/todos/:id', function(req, res){
 
 });
 
+//POST /user
+app.post('/users', function(req, res) {
+  var body = _.pick(req.body, 'email', 'password');
+
+  db.user.create(body).then(function(user){
+    res.json(user.toJSON());
+  }, function(e) {
+    console.log(e.errors[0].message);
+    res.status(400).json(e);
+
+  });
+});
+
 //coming from imports object, this is the lowercase version
 db.sequelize.sync(/*{force: true}*/).then(function(){
   app.listen(PORT, function(){
