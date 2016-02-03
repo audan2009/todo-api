@@ -200,7 +200,7 @@ app.post('/users', function(req, res) {
   db.user.create(body).then(function(user){
     res.json(user.toJSON());
   }, function(e) {
-    console.log(e.errors[0].message);
+    //console.log(e.errors[0].message);
     res.status(400).json(e);
 
   });

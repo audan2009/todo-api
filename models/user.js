@@ -12,10 +12,17 @@ module.exports = function(sequelize, DataTypes){
       type: DataTypes.STRING,
       allowNULL: false,
       validate:{
-        // [min,max] length
+        // [min,max] len
         len: [7,100]
       }
     }
-
+  }, { //begin param after 'user'
+      hooks: {
+        beforeValidate: function(user, options){
+          if(typeof user.email === 'string'){
+            user.email = user.email.toLowerCase();
+          }
+        }
+      }
   });
 };
