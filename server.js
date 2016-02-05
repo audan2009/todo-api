@@ -3,6 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
+var bcrypt = require('bcrypt');
 var PORT = process.env.PORT || 3000;
 //https://suri-todo-api.herokuapp.com/
 
@@ -198,6 +199,8 @@ app.post('/users', function(req, res) {
   var body = _.pick(req.body, 'email', 'password');
 
   db.user.create(body).then(function(user){
+    //toPublicJSON was created as a custom instance method in the user model
+    //the user model runs _.pick, removes sensitive info so res doesn't send it to API
     res.json(user.toPublicJSON());
   }, function(e) {
     //console.log(e.errors[0].message);
@@ -206,9 +209,23 @@ app.post('/users', function(req, res) {
   });
 });
 
+//POST /user/login
+app.post('/users/login', function(req, res){
+  var body = _.pick(req.body, 'email', 'password');
+
+  //create a class method on user model to refactor code
+  db.user.authenticate(body).then(function(user){
+    res.json(user.toPublicJSON());
+  }, function(e){
+    res.status(401).send();
+  });
+});
+
+
+
 //coming from imports object, this is the lowercase version
 //used force to rebuild database after adding hash and salt
-db.sequelize.sync(/*{force: true}*/).then(function(){
+db.sequelize.sync({force: true}).then(function(){
   app.listen(PORT, function(){
     console.log('Cap, Im listning on ' + PORT + '!');
   });
