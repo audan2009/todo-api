@@ -1,5 +1,7 @@
 var bcrypt = require('bcrypt');
 var _ = require('underscore');
+var cryptojs = require('crypto-js');
+var jwt = require('jsonwebtoken');
 
 module.exports = function(sequelize, DataTypes){
   //before lecture 77, this was returning the user first with "return sequelize.define('user', {"
@@ -76,7 +78,28 @@ module.exports = function(sequelize, DataTypes){
           var json = this.toJSON();
           //ignores password field so we don't expose it in the API
           return _.pick(json, 'id', 'email', 'updatedAt', 'createdAt');
-        }
+        },
+        //lesson 78
+        generateToken: function(type) {
+          if(!_.isString(type)){
+            return undefined;
+          } //end if, start try
+
+          try{
+            var stringData = JSON.stringify({id: this.get('id'), type: type});
+            //takes (string to encrypt, secret password).returns encrypted string
+            var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!$!').toString();
+            var token = jwt.sign({
+              token: encryptedData
+            }, 'qwerty098');
+
+            return token;
+          } catch(e){
+          console.error(e);
+            return undefined;
+          }
+          //end try
+        } //end generateToken
       }
   });
   //return user varialbe so that it can be used in server.js (lecture 77)
