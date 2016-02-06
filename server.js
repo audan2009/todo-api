@@ -4,6 +4,8 @@ var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require('bcrypt');
+var middleware = require('./middleware.js')(db); //function that takes db
+
 var PORT = process.env.PORT || 3000;
 //https://suri-todo-api.herokuapp.com/
 
@@ -22,7 +24,7 @@ app.use(bodyParser.json());
 // })
 
 // GET /todos?c=true&q=work
-app.get('/todos', function(req, res){
+app.get('/todos', middleware.requireAuthentication, function(req, res){
   //queryParams returns {completed: 'true'}
   var query = _.pick(req.query, 'c','q');
   var where = {};
@@ -79,7 +81,7 @@ app.get('/todos', function(req, res){
 //});
 
 //GET by ID
-app.get('/todos/:id', function(req, res){
+app.get('/todos/:id', middleware.requireAuthentication, function(req, res){
   var todoId = parseInt(req.params.id, 10);
 
   db.todo.findById(todoId).then(function(todo){
@@ -107,7 +109,7 @@ app.get('/todos/:id', function(req, res){
 });
 
 //POST /todos .. add a new todo
-app.post('/todos', function (req, res){
+app.post('/todos', middleware.requireAuthentication, function (req, res){
   var body = _.pick(req.body, 'description','completed');
 
     db.todo.create(body).then(function(todo){
@@ -132,7 +134,7 @@ app.post('/todos', function (req, res){
 });
 
 //DELETE /todos/:id
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
   var todoId = parseInt(req.params.id, 10);
 
   db.todo.destroy({
@@ -163,7 +165,7 @@ app.delete('/todos/:id', function(req, res) {
 });
 
 //PUT /todos/:id ...update
-app.put('/todos/:id', function(req, res){
+app.put('/todos/:id', middleware.requireAuthentication, function(req, res){
   //this is the body sent in the request, we only want to "pick" these 2 keys
   var body = _.pick(req.body, 'description','completed');
   var todoId = parseInt(req.params.id, 10);
@@ -225,8 +227,6 @@ app.post('/users/login', function(req, res){
     res.status(401).send();
   });
 });
-
-
 
 //coming from imports object, this is the lowercase version
 //used force to rebuild database after adding hash and salt

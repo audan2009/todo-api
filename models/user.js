@@ -70,6 +70,31 @@ module.exports = function(sequelize, DataTypes){
                  reject();
                });
           });
+        },
+        findByToken: function(token){
+          return new Promise(function(resolve, reject){
+            try{
+              var decodedJWT = jwt.verify(token, 'qwerty098');
+              var bytes = cryptojs.AES.decrypt(decodedJWT.token, 'abc123!$!');
+              var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
+
+              user.findById(tokenData.id).then(function(user){
+                if(user){
+                  resolve(user);
+                } else{
+                  //user id wasn't found
+                  reject();
+                }
+              }, function(e){
+                //if findbyid fails bc db wasnt connected
+                reject();
+              });
+
+            } catch(e){
+              //try catch failes bc token isnt valid format
+              reject();
+            }
+          });
         }
       },
       //adds instance methods that you access on the user model.
@@ -86,14 +111,21 @@ module.exports = function(sequelize, DataTypes){
           } //end if, start try
 
           try{
+
+            //this refers to accesses the current instance that we are refering to inside the instance method
             var stringData = JSON.stringify({id: this.get('id'), type: type});
+            console.log(this);
+            console.log(stringData);
             //takes (string to encrypt, secret password).returns encrypted string
             var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!$!').toString();
             var token = jwt.sign({
+              //this is so we can pull out token property to decrypt to find user by id
               token: encryptedData
+              //jwt password
             }, 'qwerty098');
 
             return token;
+
           } catch(e){
           console.error(e);
             return undefined;
