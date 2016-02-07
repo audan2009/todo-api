@@ -114,7 +114,12 @@ app.post('/todos', middleware.requireAuthentication, function (req, res){
 
     db.todo.create(body).then(function(todo){
       //todo object in sequelize isn't just an object, so have to use toJSON
-      return res.json(todo.toJSON());
+      //return res.json(todo.toJSON());
+      req.user.addTodo(todo).then(function(){
+        return todo.reload();
+      }).then(function(todo){
+         res.json(todo.toJSON());
+      });
     }).catch(function(e){
       return res.status(400).json(e);
     });

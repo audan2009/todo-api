@@ -1,65 +1,65 @@
-var Sequelize = require('Sequelize');
+var Sequelize = require('sequelize');
 var sequelize = new Sequelize(undefined, undefined, undefined, {
-  'dialect': 'sqlite',
-  'storage': __dirname + '/basic-sqlite-database.sqlite'
+	'dialect': 'sqlite',
+	'storage': __dirname + '/basic-sqlite-database.sqlite'
 });
 
 //look at sequelize docs for more validation options
-var Todo = sequelize.define('todo',{
-  description:{
-    type: Sequelize.STRING,
-    allowNULL: false,
-    validate:{
-      len:[1,250]
-    }
-  },
-  completed: {
-    type: Sequelize.BOOLEAN,
-    allowNULL: false,
-    defaultValue: false
-  }
+var Todo = sequelize.define('todo', {
+	description: {
+		type: Sequelize.STRING,
+		allowNull: false,
+		validate: {
+			len: [1, 250]
+		}
+	},
+	completed: {
+		type: Sequelize.BOOLEAN,
+		allowNull: false,
+		defaultValue: false
+	}
 });
 
+console.log(Todo);
+
+//define user model
+var User = sequelize.define('user', {
+	email: Sequelize.STRING
+});
+
+//sequelize with create foriegn keys to setup relationships
+
+Todo.belongsTo(User);
+User.hasMany(Todo);
+
+
 //sync({force: true}) will dump and recreate the database. By default it is false
-sequelize.sync().then(function(){
+sequelize.sync({
+  // force: true
+}).then(function(){
   console.log('everything is synced');
 
-  Todo.findById(1).then(function(todo){
-    if(todo){
-      console.log(todo.toJSON());
-    } else {
-      console.log("no todo with that id found");
-    }
-  }).catch(function(e){
-    console.log(e);
-  });
+ User.findById(1).then(function(user){
+   //getTodos is sequelize and you put get'model'+'s' to use it
+   //returns an array to todos
+   user.getTodos({where:
+     {completed: true}
+   }).then(function(todos){
+     todos.forEach(function(todo){
+       console.log(todo.toJSON());
+     });
+   });
+ });
 
-  // Todo.create({
-  //   description: "Walking my dog",
-  //   completed: false
-  // }).then(function(todo){
-  //   return Todo.create({
-  //     description:'clean office'
-  //   });
+  // User.create({
+  //   email: 'audan2009@gmail.com'
   // }).then(function(){
-    // return Todo.findById(1);
-    // return Todo.findAll({
-  //     where: {
-  //       description: {
-  //         //% is like *
-  //         $like: '%office%'
-  //       }
-  //     }
+  //   return Todo.create({
+  //     description: 'fix wheel well'
   //   });
-  // }).then(function(todos){
-  //   if(todos){
-  //     todos.forEach(function(todo){
-  //       console.log(todo.toJSON());
-  //     });
-  //   } else {
-  //     console.log('no todo found');
-  //   }
-  // }).catch(function(e){
-  //   console.log(e);
+  // }).then(function(todo){
+  //   User.findById(1).then(function(user){
+  //     user.addTodo(todo);
+  //   });
   // });
 });

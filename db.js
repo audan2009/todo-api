@@ -16,9 +16,7 @@ if(env === 'production') {
     'dialect': 'sqlite',
     'storage': __dirname + '/data/dev-todo-api.sqlite'
   });
-}
-
-
+};
 
 var db = {};
 
@@ -32,6 +30,9 @@ db.user = sequelize.import(__dirname + '/models/user.js');
 //notice the 2 sequelize calls above, one is lower and one is uppercase
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+
+db.todo.belongsTo(db.user);
+db.user.hasMany(db.todo);
 
 //you can use objects to return a lot of things.
 module.exports = db;
