@@ -230,18 +230,42 @@ app.post('/users', function(req, res) {
 //POST /user/login
 app.post('/users/login', function(req, res){
   var body = _.pick(req.body, 'email', 'password');
+  var userInstance;
 
   //create a class method on user model to refactor code
   db.user.authenticate(body).then(function(user){
     var token = user.generateToken('authentication');
-    if(token){
-      res.header('Auth', token).json(user.toPublicJSON());
-    } else {
-      res.status(401).send();
-    }
-  }, function(e){
+    userInstance = user;
+
+    //save token to database
+    return db.token.create({
+      //set token to the token value, the hash is whats going to get saved
+      //validation is handled here
+      token: token
+    });
+
+    // if(token){
+    //   res.header('Auth', token).json(user.toPublicJSON());
+    // } else {
+    //   res.status(401).send();
+    // }
+  }).then(function(tokenInstance){
+    //set header, auth set to token, then call json to send user data
+    res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+  }).catch(function() {
     res.status(401).send();
   });
+});
+
+// DELETE /user/login
+
+app.delete('/users/login', middleware.requireAuthentication, function(req, res){
+
+    req.token.destroy().then(function(){
+      res.status(204).send();
+    }).catch(function(){
+      res.status(500).send();
+    });
 });
 
 //coming from imports object, this is the lowercase version

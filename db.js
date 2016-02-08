@@ -27,6 +27,7 @@ var db = {};
 //IMPORTING todo MODEL
 db.todo = sequelize.import(__dirname + '/models/todo.js');
 db.user = sequelize.import(__dirname + '/models/user.js');
+db.token = sequelize.import(__dirname + '/models/token.js');
 //notice the 2 sequelize calls above, one is lower and one is uppercase
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
