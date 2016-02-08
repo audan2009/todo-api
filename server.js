@@ -27,7 +27,7 @@ app.use(bodyParser.json());
 app.get('/todos', middleware.requireAuthentication, function(req, res){
   //queryParams returns {completed: 'true'}
   var query = _.pick(req.query, 'c','q');
-  var where = {};
+  var where = { userId: req.user.get('id') };
 
   console.log(where);
 
@@ -84,7 +84,12 @@ app.get('/todos', middleware.requireAuthentication, function(req, res){
 app.get('/todos/:id', middleware.requireAuthentication, function(req, res){
   var todoId = parseInt(req.params.id, 10);
 
-  db.todo.findById(todoId).then(function(todo){
+  db.todo.findOne({
+    where:{
+      userId: req.user.get('id'),
+      id: todoId
+    }
+  }).then(function(todo){
     console.log(todo + 'this is the to do');
     //!! coerces the object to boolean
     // http://stackoverflow.com/questions/784929/what-is-the-not-not-operator-in-javascript
@@ -144,6 +149,7 @@ app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
 
   db.todo.destroy({
     where: {
+      userId: req.user.get('id'),
       id: todoId
     }
   }).then(function(rowsDeleted){
@@ -184,7 +190,12 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res){
      attributes.description = body.description;
      }
 
-    db.todo.findById(todoId).then(function(todo){
+    db.todo.findOne({
+      where:{
+        userId: req.user.get('id'),
+        id: todoId
+      }
+    }).then(function(todo){
       if(todo){
          todo.update(attributes).then(function(todo) {
              res.json(todo.toJSON());
